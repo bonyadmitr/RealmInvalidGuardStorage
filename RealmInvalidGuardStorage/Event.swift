@@ -19,7 +19,11 @@ struct Ev: Storable {
     var viewed = false
     
     func produce() -> Event {
-        return Event()
+        let event = Event()
+        
+        event.id = self.id
+        
+        return event
     }
     
     init() {}

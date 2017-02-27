@@ -24,13 +24,18 @@ protocol StorableMirror: class {
 
 class RealmRepo<S: Storable, M: StorableMirror> where S.MirroredObject == M, M.OriginalObject == S {
     private let queue: DispatchQueue
-    let realm: Realm
+    let config: Realm.Configuration
     let results: Results<M>
     
     init() throws {
         queue = DispatchQueue(label: "sdfsdfds")
-        realm = try queue.sync { try Realm() }
-        results = try queue.sync { try Realm().objects(M.self) }
+        let cfg = Realm.Configuration()
+        config = cfg
+        let realm = try Realm(configuration: cfg)
+        try realm.write {
+            realm.deleteAll()
+        }
+        results = try queue.sync { try Realm(configuration: cfg).objects(M.self) }
     }
     
     var count: Int {
@@ -41,10 +46,25 @@ class RealmRepo<S: Storable, M: StorableMirror> where S.MirroredObject == M, M.O
         return queue.promise {
             let m = object.produce()
             
-            try self.realm.write {
-                self.realm.add(m)
+            let realm = try Realm(configuration: self.config)
+            
+            try realm.write {
+                realm.add(m, update: true)
             }
             return object
+        }
+    }
+    
+    func save(_ objects: [S]) -> Promise<[S]> {
+        return queue.promise {
+            let m = objects.map { $0.produce() }
+            
+            let realm = try Realm(configuration: self.config)
+            
+            try realm.write {
+                realm.add(m, update: true)
+            }
+            return objects
         }
     }
     
@@ -54,7 +74,7 @@ class RealmRepo<S: Storable, M: StorableMirror> where S.MirroredObject == M, M.O
     
     func get(at index: Int) -> Promise<S> {
         return queue.promise {
-            return try self.results[index].produce()
+            return try Realm(configuration: self.config).objects(M.self)[index].produce()
         }
     }
 }
