@@ -17,28 +17,42 @@ class ViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        /// !!! CRASH !!! Realm accessed from incorrect thread
-        for i in 0..<10000 {
-            _ = service.save(Ev(id: i)).then { _ in
-                print(i)
-            }
+        print("Started")
+        
+        let objects = (0..<10000).map {
+             Ev(id: $0)
+        }
+        
+        service.save(objects).asVoid().then {
+            print("Done")
+        }.then{
+            self.tableView.reloadData()
+        }.catch { (error) in
+            dump(error)
         }
         
     }
     
     
-//    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        return service.count
-//    }
-//    
-//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-//        
-//        _ = service.get(at: indexPath.row).then { (event) -> Void in
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return service.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        
+//        service.get(at: indexPath.row).then { (event) -> Void in
 //            cell.textLabel?.text = event.title
-//            cell.detailTextLabel?.text = String(event.portfolioId)
+//            cell.detailTextLabel?.text = String(event.id)
+//        }.catch { (error) in
+//            dump(error)
 //        }
-//        
-//        return cell
-//    }
+        
+        if let event = service.repo[indexPath.row] {
+            cell.textLabel?.text = event.title
+            cell.detailTextLabel?.text = String(event.id)
+        }
+        
+        return cell
+    }
 }

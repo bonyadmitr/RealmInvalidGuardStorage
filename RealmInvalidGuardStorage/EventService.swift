@@ -20,6 +20,10 @@ class EventService {
         return repo.save(object)
     }
     
+    func save(_ objects: [Ev]) -> Promise<[Ev]> {
+        return repo.save(objects)
+    }
+    
     var count: Int {
         return repo.count
     }
